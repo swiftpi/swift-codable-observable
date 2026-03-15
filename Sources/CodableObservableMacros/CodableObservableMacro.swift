@@ -3,7 +3,7 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
-public struct CodableObservableMacro: MemberMacro {
+public struct CodableObservableMacro: MemberMacro, ExtensionMacro {
     public static func expansion(
         of node: AttributeSyntax,
         providingMembersOf declaration: some DeclGroupSyntax,
@@ -64,6 +64,35 @@ public struct CodableObservableMacro: MemberMacro {
         """
 
         return [DeclSyntax(stringLiteral: codingKeysDecl)]
+    }
+
+    public static func expansion(
+        of node: AttributeSyntax,
+        attachedTo declaration: some DeclGroupSyntax,
+        providingExtensionsOf type: some TypeSyntaxProtocol,
+        conformingTo protocols: [TypeSyntax],
+        in context: some MacroExpansionContext
+    ) throws -> [ExtensionDeclSyntax] {
+        guard declaration.is(ClassDeclSyntax.self) else {
+            return []
+        }
+
+        let typeName = type.trimmedDescription
+        return [
+            try ExtensionDeclSyntax(
+                """
+                extension \(raw: typeName): Hashable {
+                    public static func == (lhs: \(raw: typeName), rhs: \(raw: typeName)) -> Bool {
+                        lhs === rhs
+                    }
+
+                    public func hash(into hasher: inout Hasher) {
+                        hasher.combine(ObjectIdentifier(self))
+                    }
+                }
+                """
+            )
+        ]
     }
 }
 

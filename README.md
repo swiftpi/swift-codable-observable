@@ -48,16 +48,26 @@ final class FlagModel: Codable {
 }
 ```
 
-The macro expands to a `CodingKeys` enum similar to:
+For classes, the macro also adds identity-based `Hashable` conformance. The expansion is similar to:
 
 ```swift
 enum CodingKeys: String, CodingKey {
     case _id = "id"
     case _appid = "appid"
 }
+
+extension FlagModel: Hashable {
+    static func == (lhs: FlagModel, rhs: FlagModel) -> Bool {
+        lhs === rhs
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(ObjectIdentifier(self))
+    }
+}
 ```
 
-That generated enum allows `JSONDecoder` and `JSONEncoder` to use the observable backing storage while preserving the expected external key names.
+That generated code allows `JSONDecoder` and `JSONEncoder` to use the observable backing storage while preserving the expected external key names, and lets class instances participate in hashed collections using reference identity.
 
 ## Example
 
@@ -69,6 +79,7 @@ let model = try JSONDecoder().decode(FlagModel.self, from: Data(json.utf8))
 ## Behavior
 
 - Supports classes and structs.
+- Adds identity-based `Hashable` conformance for classes.
 - Ignores `static` and `class` properties.
 - Ignores computed properties.
 - Does nothing if `CodingKeys` is already defined.

@@ -25,3 +25,14 @@ func observableCodingKeysSupportsCodableDecodingFromJSON() throws {
     #expect(decoded.id == 42)
     #expect(decoded.name == "alpha")
 }
+
+@Test
+func observableHashableUsesReferenceIdentity() {
+    let original = TestModel(id: 1, name: "same")
+    let sameReference = original
+    let differentInstance = TestModel(id: 1, name: "same")
+
+    #expect(original == sameReference)
+    #expect(original != differentInstance)
+    #expect(original.hashValue == sameReference.hashValue)
+}
